@@ -1,0 +1,27 @@
+{
+  "name": "libraydjs",
+  "version": "1.0.0",
+  "description": "Node JS Module interface to publish messages to the Florincoin Blockchain.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ostlerdev/libraryd-npm.git"
+  },
+  "keywords": [
+    "LibraryD",
+    "Alexandria",
+    "Florincoin",
+    "API"
+  ],
+  "author": "OstlerDev <sky@alexandria.io>",
+  "bugs": {
+    "url": "https://github.com/ostlerdev/libraryd-npm/issues"
+  },
+  "homepage": "https://github.com/ostlerdev/libraryd-npm#readme",
+  "dependencies": {
+    "node-litecoin": "^1.0.1"
+  }
+}

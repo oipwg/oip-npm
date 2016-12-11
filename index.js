@@ -204,7 +204,9 @@ LibraryDJS.prototype.publishArtifact = function(oipArtifact, callback){
 		}
 		// Attach signature
 		oipArtifact.signature = res.message;
-		libraryd.sendToBlockChain(oipArtifact, oipArtifact.artifact.publisher, function(response){
+		// Above we remove the "oip-041" for ease of use, this adds it back in.
+		var reformattedOIP = { "oip-041": oipArtifact }
+		libraryd.sendToBlockChain(reformattedOIP, oipArtifact.artifact.publisher, function(response){
 			callback(response);
 		})
 	});

@@ -1,2 +1,192 @@
-# libraryd-npm
-Publish to LibraryD using `node-litecoin` inside Node.js
+# LibraryDJS
+LibraryDJS is an easy to use Node.js module to help with publishing to OIP media formats. It publishes the OIP metadata to the Florincoin blockchain using predefined
+
+## Installation
+Import LibraryDJS into your existing application using the following below.
+```
+$ npm install LibraryDJS --save
+```
+
+# Usage
+## Starting Off
+To start off, you will need to import LibaryDJS into your application, then set it up using the example below.
+```javascript
+var LibraryDJS = require('LibraryDJS');
+
+var ldjs = new LibraryDJS({
+     host: 'localhost', # Information about your local Florincoin RPC
+     port: 18322,
+     username: 'florincoinrpc', 
+     password: 'password'
+});
+```
+
+## Main Functions
+### Publish Media:
+`publishArtifact(oipArtifact, callback)`: Validates and publishes a submitted OIP-041 artifact:
+```javascript
+var LibraryDJS = require('LibraryDJS');
+
+var ldjs = new LibraryDJS({
+     host: 'localhost', # Information about your local Florincoin RPC
+     port: 18322,
+     username: 'florincoinrpc', 
+     password: 'password'
+});
+
+// The artifact to publish in OIP-041 format.
+var artifact = {
+  "oip-041": {
+    "artifact": {
+      "publisher": "FD6qwMcfpnsKmoL2kJSfp1czBMVicmkK1Q",
+      "timestamp": 1481419390,
+      "type": "music",
+      "info": {
+        "title": "Test Artifact",
+        "description": "Testing publishing from LibraryDJS",
+        "year": "2016",
+        "extraInfo": {}
+      },
+      "storage":{
+      "network": "IPFS",
+      "location": "QmPukCZKeJD4KZFtstpvrguLaq94rsWfBxLU1QoZxvgRxA",
+      "files": [
+            {
+              "dname": "Skipping Stones",
+              "fame": "1 - Skipping Stones.mp3",
+              "fsize": 6515667,
+              "type": "album track",
+              "duration": 1533.603293
+            }
+          ]},
+      "payment": {
+      }
+    }
+  }
+}
+
+ldjs.publishArtifact(artifact, function(response){
+	if (res.success)
+		// Successful
+	else
+		// Not successful, usually because the submitted JSON is malformed.
+
+	console.log(response);
+})
+```
+After processing the `publishArtifact` function will return a response as follows:
+```javascript
+{
+	"success": true, 					# This variable is set dependant on if the API call was successful or not.
+	"message": "tx1,tx2,tx3,tx4,tx5",	# This variable will be filled in on success. If success is false, `error` will be used instead of `message`.
+}
+```
+
+### Edit Media:
+`editArtifact(newOIPArtifact, oldArtifactTXID, callback)`: The Edit Artifact function accepts data in the OIP-041 Edit format (example below) along with data in the standard OIP-041 schema (same as `publishArtifact` but with an added `txid` field inside the data at `oip-041.artifact.txid`). It calculates what information is new and publish that to the Florincoin blockchain. Example Edit code:
+```javascript
+// The artifact txid that we are editting
+var originalTX = "XXXXXXXXXXXXX";
+// The updated artifact in OIP-041 format.
+var artifact = {
+  "oip-041": {
+    "artifact": {
+      "publisher": "FD6qwMcfpnsKmoL2kJSfp1czBMVicmkK1Q",
+      "timestamp": 1481419391,
+      "type": "music",
+      "info": {
+        "title": "Test Artifact (edit)",
+        "description": "Testing editting from LibraryDJS",
+        "year": "2016",
+        "extraInfo": {}
+      },
+      "storage":{
+      "network": "IPFS",
+      "location": "QmPukCZKeJD4KZFtstpvrguLaq94rsWfBxLU1QoZxvgRxA",
+      "files": [
+            {
+              "dname": "Skipping Stones",
+              "fame": "1 - Skipping Stones.mp3",
+              "fsize": 6515667,
+              "type": "album track",
+              "duration": 1533
+            }
+          ]},
+      "payment": {
+      }
+    }
+  }
+}
+
+ldjs.editArtifact(artifact, originalTX, function(response){
+	if (res.success)
+		// Successful
+	else
+		// Not successful, usually because the submitted JSON is malformed.
+
+	console.log(response);
+})
+```
+After processing the `editArtifact` function will return a response in a callback as follows:
+```javascript
+{
+	"success": true, 					# This variable is set dependant on if the API call was successful or not.
+	"message": "tx1,tx2,tx3,tx4,tx5",	# This variable will be filled in on success. If success is false, `error` will be used instead of `message`.
+}
+```
+
+### Remove Media:
+`deactivateArtifact(txid, title, callback)`: Deactivates an artifact in LibraryD. This will cause the artifact to stop showing up in the browser, however it does NOT remove the previously published data from the blockchain. Any information previously published will be accessable for as long as Florincoin exists. Example deactivation of an artifact:
+```javascript
+// The artifact txid that we are editting
+var originalTX = "XXXXXXXXXXXXX";
+// The updated artifact in OIP-041 format.
+var title = "Test Artifact"
+
+ldjs.deactivateArtifact(originalTX, title, function(response){
+	if (res.success)
+		// Successful
+	else
+		// Not successful, usually because the lack of callback or title.
+
+	console.log(response);
+})
+```
+After processing the `deactivateArtifact` API endpoint will return a response as follows:
+```javascript
+{
+	"success": true, 	# This variable is set dependant on if the API call was successful or not.
+	"message": "txid"	# This variable will be filled in on success. If success is false, `error` will be used instead of `message`.
+}
+```
+
+### Transfer Ownership:
+`transferOwnership(txid, newOwner, callback)`: Changes the ownership of an artifact from your publisher to another user. `transferOwnership` function example:
+```javascript
+// The artifact txid that we are transfering
+var originalTX = "XXXXXXXXXXXXX";
+// The updated artifact in OIP-041 format.
+var newOwner = "XXXXXXXXXXXXX"; // This needs to be a florincoin address that is a registered publisher. If it is not a registered publisher it will fail.
+
+ldjs.deactivateArtifact(originalTX, title, function(response){
+	if (res.success)
+		// Successful
+	else
+		// Not successful, usually because the lack of callback or title.
+
+	console.log(response);
+})
+```
+After processing the `transferOwnership` function will return a response as follows:
+```javascript
+{
+	"success": true, 	# This variable is set dependant on if the API call was successful or not.
+	"message": "txid"	# This variable will be filled in on success. If success is false, `error` will be used instead of `message`.
+}
+```
+
+## OIP Artifact Formats
+
+
+## License
+This module uses the MIT License. This can be found inside the file named `LICENSE`

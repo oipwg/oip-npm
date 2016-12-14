@@ -17,7 +17,7 @@ var oip041 = {
             "info":{  
                 "title":"Happy Birthday EP",
                 "description":"this is the second organically grown, gluten free album released by Adam B. Levine - contact adam@tokenly.com with questions or comments or discuss collaborations.",
-                "year":"2016",
+                "year":2016,
                 "extraInfo":{  
                     "artist":"Adam B. Levine",
                     "company":"",
@@ -121,7 +121,7 @@ var artifactEdit = {
             "info":{  
                 "title":"Happy Birthday EP",
                 "description":"This is the second organically grown, gluten free album released by Adam B. Levine - contact adam@tokenly.com with questions or comments or discuss collaborations.",
-                "year":"2016",
+                "year":2016,
                 "extraInfo":{  
                     "artist":"Adam B. Levine",
                     "company":"",

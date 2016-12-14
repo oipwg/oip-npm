@@ -111,12 +111,13 @@ var oip041 = {
 var artifactEdit = {
   "oip-041": {
     "artifact": {
+    	"txid": "96bad8e17f908da4c695c58b0f843a03928e338b361b3035ed16a864eafc31a2",
       "publisher": "FD6qwMcfpnsKmoL2kJSfp1czBMVicmkK1Q",
       "timestamp": 1481420001,
       "type": "music",
       "info": {
-        "title": "Happy Birthday",
-        "description": "this is the second organically grown, gluten free album released by Adam B. Levine - contact adam@tokenly.com with questions or comments or discuss collaborations.",
+        "title": "Happy Birthday EP",
+        "description": "This is the second organically grown, gluten free album released by Adam B. Levine - contact adam@tokenly.com with questions or comments or discuss collaborations.",
         "year": "2016",
         "extraInfo": {
           "artist": "Adam B. Levine",
@@ -209,8 +210,9 @@ var artifactEdit = {
 
 // List your rigs
 //ldjs.getArtifact('a449b0f6a601e503e7b4fdc0ada47f55a8b2f98feb2fdb044f7a92d971ff0456', function(response){});
-var editDiff = ldjs.generateEditDiff(oip041, artifactEdit);
-console.log(editDiff);
+ldjs.editArtifact(artifactEdit, function(res){
+	console.log(res);
+});
 
 //var verify = ldjs.verifyArtifact(artifactEdit);
 //console.log(verify);

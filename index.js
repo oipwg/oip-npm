@@ -135,11 +135,123 @@ LibraryDJS.prototype.publishArtifact = function(oipArtifact, callback){
 		// Attach signature
 		oipArtifact.signature = res.message;
 		// Above we remove the "oip-041" for ease of use, this adds it back in.
-		var reformattedOIP = { "oip-041": oipArtifact }
-		libraryd.sendToBlockChain(reformattedOIP, oipArtifact.artifact.publisher, function(response){
+		libraryd.sendToBlockChain(oipArtifact, oipArtifact.artifact.publisher, function(response){
 			callback(response);
 		})
 	});
+}
+
+// Accepts information in the format OIP-041-Artifact and OIP-041-Edit
+LibraryDJS.prototype.editArtifact = function(oipArtifact, callback){
+	// Check if the callback is being passed in as args
+	if (!oipArtifact || typeof oipArtifact === "function"){
+		callback = oipArtifact;
+		callback(generateResponseMessage(false, 'You must submit information in the OIP-041 format'));
+		return;
+	}
+	// Make sure we don't crash :)
+	if (typeof oipArtifact == "string"){
+		// Test to see if the artifact is valid JSON
+		try {
+			oipArtifact = JSON.parse(oipArtifact);
+		} catch (e) {
+			callback(generateResponseMessage(false, "Artifact is not valid JSON"));
+		}
+	}
+	// Check if it is an edit or artifact format.
+	if (oipArtifact['oip-041'].edit){
+		// IPFS - Address - UNIX Timestamp
+		var toSign = oipArtifact.artifact.storage.location + "-" + oipArtifact.artifact.publisher + "-" + oipArtifact.artifact.timestamp;
+		
+		// Sign the message
+		libraryd.signMessage(oipArtifact.artifact.publisher, toSign, function(res){
+			if (!res.success){
+				callback(res);
+				return;
+			}
+			// Attach signature
+			oipArtifact.signature = res.message;
+			// Above we remove the "oip-041" for ease of use, this adds it back in.
+			var reformattedOIP = { "oip-041": oipArtifact }
+			libraryd.sendToBlockChain(reformattedOIP, oipArtifact.artifact.publisher, function(response){
+				callback(response);
+				return;
+			})
+		});
+	}
+	// If the artifact verifies correctly it will contain no text, if it fails it will have an error.
+	var verify = this.verifyArtifact(oipArtifact);
+	// Check if there is an error
+	if (verify){
+		callback(verify);
+		return;
+	}
+
+	if (!oipArtifact['oip-041'].artifact.txid){
+		return generateResponseMessage(false, "artifact.txid is a required field when editting! Please submit the TXID of the artifact you wish to edit.");
+	}
+
+	var libraryd = this;
+	// Get the original artifact
+	libraryd.getArtifact(oipArtifact['oip-041'].artifact.txid, function(response){
+		if (typeof response == "string"){
+			// Test to see if the artifact is valid JSON
+			try {
+				response = JSON.parse(response);
+			} catch (e) {
+				callback(generateResponseMessage(false, "Artifact is not valid JSON"));
+			}
+		}
+
+		// Check if response is successful
+		if (!response.success){
+			callback(response);
+			return;
+		}
+
+		var oldArtifact = response.message;
+
+		// Check if the TX is OIP-041, only supports edits for that currently
+		if (!response.message['oip-041']){
+			callback(generateResponseMessage(false, "Unable to edit artifacts that are not OIP-041"));
+			return;
+		}
+
+		// Remove the txid, we don't want to publish that
+		var oldTX = oipArtifact['oip-041'].artifact.txid;
+		delete oipArtifac['oip-041'].artifact.txid;
+
+		// Get the edit format
+		var oipEdit = libraryd.generateEditDiff(response.message, oipArtifact, oipArtifact['oip-041'].artifact.txid);
+
+		// Generate the MD5 Hash 
+		var patch = oipEdit['oip-041'].edit.patch;
+		var patchHash = patch;
+		crypto.createHash('md5').update(patchHash).digest("hex");
+
+		console.log(patchHash);
+
+		// http://api.alexandria.io/#sign-publisher-announcement-message
+		// Old TXID - MD5 Hash of Patch - UNIX Timestamp
+		var toSign = oipArtifact['oip-041'].artifact.txid + "-" + patchHash + "-" + oipArtifact['oip-041'].artifact.timestamp;
+		
+		console.log(toSign);
+		console.log(oipEdit);
+		// Sign the message
+		/*libraryd.signMessage(oipArtifact.artifact.publisher, toSign, function(res){
+			if (!res.success){
+				callback(res);
+				return;
+			}
+			// Attach signature
+			oipArtifact.signature = res.message;
+			// Above we remove the "oip-041" for ease of use, this adds it back in.
+			var reformattedOIP = { "oip-041": oipArtifact }
+			libraryd.sendToBlockChain(reformattedOIP, oipArtifact.artifact.publisher, function(response){
+				callback(response);
+			})
+		});*/
+	})
 }
 
 LibraryDJS.prototype.signMessage = function(address, toSign, callback){
@@ -326,7 +438,7 @@ LibraryDJS.prototype.generateEditDiff = function(originalArtifact, updatedArtifa
         "edit":{
             "txid": origTXID,
             "timestamp":updatedArtifact['oip-041'].artifact.timestamp,
-            "patch": packed
+            "patch": squashed
         }
     }
 }
@@ -335,7 +447,7 @@ LibraryDJS.prototype.generateEditDiff = function(originalArtifact, updatedArtifa
 }
 
 LibraryDJS.prototype.getArtifact = function(txid, callback){
-	var baseURL = 'https://api.alexandria.io/alexandria/v1/search';
+	var baseURL = 'https://api.alexandria.io/alexandria/v2/search';
 	var options = {
 		method: 'POST',
 		headers: {},
@@ -352,6 +464,12 @@ LibraryDJS.prototype.getArtifact = function(txid, callback){
 			if (!error && response.statusCode == 200) {
 				// Grab the result we want.
 				var artifacts = JSON.parse(body);
+
+				if (!artifacts.response){
+					callback(generateResponseMessage(false, "No artifacts found from your search of TXID "));
+					return;
+				}
+
 				var artifact = artifacts.response[0];
 				var str = JSON.stringify(artifact);
 

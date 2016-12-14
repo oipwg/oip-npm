@@ -319,8 +319,10 @@ LibraryDJS.prototype.deactivateArtifact = function(txid, title, callback){
 				// Attach signature
 				var oipDeactivate = {
 					"oip-041": {
-						"deactivateArtifact": txid,
-						"timestamp": timestamp,
+						"deactivateArtifact": {
+							"txid": oldArtifact['oip-041'].artifact.txid,
+							"timestamp": timestamp
+						},
 						"signature": res.message
 					}
 				}
@@ -333,6 +335,69 @@ LibraryDJS.prototype.deactivateArtifact = function(txid, title, callback){
 			callback(generateResponseMessage(false, "The title does not match! Aborting deactivation!"));
 		}
 	});
+}
+
+LibraryDJS.prototype.transferArtifact = function(txid, origOwner, newOwner, callback){
+	if (!callback){
+		// Check if they submitted the callback as the title
+		if (typeof newOwner == "function"){
+			callback = newOwner;
+			callback(generateResponseMessage('You must submit a new owner!'));
+			return;
+		}
+		return;
+	}
+
+	// Check if we have a txid
+	if (!txid){
+		callback(generateResponseMessage(false, "You must submit a txid!"));
+		return;
+	}
+
+	// Check txid length, make sure it is 64
+	if (txid.length != 64){
+		callback(generateResponseMessage(false, "You must submit a valid txid!"));
+		return;
+	}
+
+	if (!origOwner){
+		callback(generateResponseMessage(false, "You must submit the original owner!"));
+		return;
+	}
+
+	if (!newOwner){
+		callback(generateResponseMessage(false, "You must submit the new owner!"));
+		return;
+	}
+
+	var libraryd = this;
+	
+	var timestamp = Math.floor(Date.now() / 1000);
+	var toSign = txid + "-" + origOwner + "-" + newOwner + "-" + timestamp;
+
+	// Sign the message
+	libraryd.signMessage(origOwner, toSign, function(res){
+		if (!res.success){
+			callback(res);
+			return;
+		}
+		// Attach signature
+		var oipTransfer = {
+			"oip-041": {
+				"transferArtifact": {
+					"txid": txid,
+					"to": newOwner,
+					"from": origOwner,
+					"timestamp": timestamp
+				},
+				"signature": res.message
+			}
+		}
+
+		libraryd.sendToBlockChain(oipTransfer, origOwner, function(response){
+			callback(response);
+		})
+	})
 }
 
 LibraryDJS.prototype.signMessage = function(address, toSign, callback){

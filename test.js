@@ -114,7 +114,7 @@ var oip041 = {
 var artifactEdit = {  
     "oip-041":{  
         "artifact":{  
-            "txid":"96bad8e17f908da4c695c58b0f843a03928e338b361b3035ed16a864eafc31a2",
+            "txid":"d5fa5f01038afb6537ea517fcb107eaaee2a6834997b7b7265f580beaec5a1b4",
             "publisher":"FD6qwMcfpnsKmoL2kJSfp1czBMVicmkK1Q",
             "timestamp":1481420001,
             "type":"music",
@@ -215,7 +215,9 @@ var artifactEdit = {
 }
 
 
-ldjs.getArtifact('96bad8e17f908da4c695c58b0f843a03928e338b361b3035ed16a864eafc31a2', function(response){console.log(response)});
+//ldjs.editArtifact(editArtifact, function(response){console.log(response)});
+//ldjs.getArtifact('d5fa5f01038afb6537ea517fcb107eaaee2a6834997b7b7265f580beaec5a1b4', function(response){console.log(response)});
+ldjs.transferArtifact('d5fa5f01038afb6537ea517fcb107eaaee2a6834997b7b7265f580beaec5a1b4', 'FD6qwMcfpnsKmoL2kJSfp1czBMVicmkK1Q', 'FLuiVU5iDQ4a6ztcpBLwBNjBisyY2DvUTV', function(response){console.log(response)});
 //ldjs.publishArtifact(oip041, function(res){ console.log(res); });
 
 //var verify = ldjs.verifyArtifact(artifactEdit);

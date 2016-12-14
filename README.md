@@ -183,15 +183,17 @@ After processing the `deactivateArtifact` API endpoint will return a response as
 }
 ```
 
-### Transfer Ownership:
-`transferOwnership(txid, newOwner, callback)`: Changes the ownership of an artifact from your publisher to another user. `transferOwnership` function example:
+### Transfer Artifact:
+`transferArtifact(txid, newOwner, callback)`: Changes the ownership of an artifact from your publisher to another user. `transferArtifact` function example:
 ```javascript
 // The artifact txid that we are transfering
 var originalTX = "XXXXXXXXXXXXX";
+// Your publisher address
+var origOwner = "XXXXXXXXXXXXX";
 // The updated artifact in OIP-041 format.
 var newOwner = "XXXXXXXXXXXXX"; // This needs to be a florincoin address that is a registered publisher. If it is not a registered publisher it will fail.
 
-ldjs.transferOwnership(originalTX, newOwner, function(response){
+ldjs.transferOwnership(originalTX, origOrner, newOwner, function(response){
 	if (res.success)
 		// Successful
 	else
@@ -200,7 +202,7 @@ ldjs.transferOwnership(originalTX, newOwner, function(response){
 	console.log(response);
 })
 ```
-After processing the `transferOwnership` function will return a response as follows:
+After processing the `transferArtifact` function will return a response as follows:
 ```javascript
 {
 	"success": true, 	# This variable is set dependant on if the API call was successful or not.

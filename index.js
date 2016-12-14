@@ -284,7 +284,7 @@ LibraryDJS.prototype.sendToBlockChain = function(txComment, address, callback){
 	}
 }
 
-LibraryDJS.prototype.generateEditDiff = function(originalArtifact, updatedArtifact){
+LibraryDJS.prototype.generateEditDiff = function(originalArtifact, updatedArtifact, origTXID){
 	if (!originalArtifact || !updatedArtifact)
 		return generateResponseMessage(false, "You are missing either the original artifact or the updated artifact");
 	// Check if the original artifact is actually just the transaction ID for the original artifact
@@ -318,9 +318,20 @@ LibraryDJS.prototype.generateEditDiff = function(originalArtifact, updatedArtifa
 
 	var squashed = squashPatch(result);
 	//console.log(JSON.stringify(squashed));
+	var packed = jsonpack.pack(squashed);
 	//console.log(jsonpack.pack(squashed));
 
-	return '{"success": true, "message": ' + JSON.stringify(squashed) + '}';
+	var oip041Edit = {
+    "oip-041":{
+        "edit":{
+            "txid": origTXID,
+            "timestamp":updatedArtifact['oip-041'].artifact.timestamp,
+            "patch": packed
+        }
+    }
+}
+
+	return '{"success": true, "message": ' + JSON.stringify(oip041Edit) + '}';
 }
 
 LibraryDJS.prototype.getArtifact = function(txid, callback){

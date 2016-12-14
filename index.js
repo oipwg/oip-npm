@@ -1,4 +1,7 @@
 var florincoin = require('node-litecoin');
+var request = require('request');
+var jsonpatch = require('fast-json-patch');
+var jsonpack = require('jsonpack/main');
 var client;
 
 function LibraryDJS(args){
@@ -110,84 +113,11 @@ LibraryDJS.prototype.publishArtifact = function(oipArtifact, callback){
 		return;
 	}
 
-	if (typeof oipArtifact == "string"){
-		// Test to see if the artifact is valid JSON
-		try {
-			oipArtifact = JSON.parse(oipArtifact);
-		} catch (e) {
-			callback(generateResponseMessage(false, "Artifact is not valid JSON"));
-			return;
-		}
-	}
-
-	// Test that the artifact has all required fields.
-	// Test "oip-041" wrapping/version number
-	if (!oipArtifact["oip-041"]){
-		callback(generateResponseMessage(false, "Artifact is not contained in 'oip-041' or is using an unsupported oip schema version."));
-		return;
-	}
-
-	oipArtifact = oipArtifact["oip-041"];
-	// Test required fields
-	if (!oipArtifact.artifact){
-		callback(generateResponseMessage(false, "You must submit artifact JSON inside oip-041!"));
-		return;
-	}
-	if (!oipArtifact.artifact.publisher){
-		callback(generateResponseMessage(false, "artifact.publisher is a required field"));
-		return;
-	}
-	if (!oipArtifact.artifact.timestamp){
-		callback(generateResponseMessage(false, "artifact.timestamp is a required field"));
-		return;
-	}
-
-	// Validate timestamp is a number
-	if (isNaN(oipArtifact.artifact.timestamp)){
-		callback(generateResponseMessage(false, "artifact.timestamp must be submitted as a number"));
-		return;
-	}
-
-	if (!oipArtifact.artifact.type){
-		callback(generateResponseMessage(false, "artifact.type is a required field"));
-		return;
-	}
-
-	if (!oipArtifact.artifact.info){
-		callback(generateResponseMessage(false, "artifact.info is a required fieldset"));
-		return;
-	}
-	if (!oipArtifact.artifact.info.title){
-		callback(generateResponseMessage(false, "artifact.info.title is a required field"));
-		return;
-	}
-	if (!oipArtifact.artifact.info.description){
-		callback(generateResponseMessage(false, "artifact.info.description is a required field"));
-		return;
-	}
-	if (!oipArtifact.artifact.info.year){
-		callback(generateResponseMessage(false, "artifact.info.year is a required field"));
-		return;
-	}
-
-	// Validate year is a number
-	if (isNaN(oipArtifact.artifact.info.year)){
-		callback(generateResponseMessage(false, "artifact.info.year must be submitted as a number"));
-		return;
-	}
-
-	if (!oipArtifact.artifact.storage){
-		callback(generateResponseMessage(false, "artifact.storage is a required fieldset"));
-		return;
-	}
-	if (!oipArtifact.artifact.storage.network){
-		callback(generateResponseMessage(false, "artifact.storage.network is a required field"));
-		return;
-	}
-
-	// Currently the storage location is a required field. This however can be "hidden" using LibraryD so that you can serve the IPFS file location via an API (for example, that detects payments)
-	if (!oipArtifact.artifact.storage.location){
-		callback(generateResponseMessage(false, "artifact.storage.location is a required field (Talk with Alexandria if you need to hide this field from being published in LibraryD)"));
+	// If the artifact verifies correctly it will contain no text, if it fails it will have an error.
+	var verify = verifyArtifact(oipArtifact);
+	// Check if there is an error
+	if (verify){
+		callback(verify);
 		return;
 	}
 
@@ -354,12 +284,193 @@ LibraryDJS.prototype.sendToBlockChain = function(txComment, address, callback){
 	}
 }
 
+LibraryDJS.prototype.generateEditDiff = function(originalArtifact, updatedArtifact){
+	if (!originalArtifact || !updatedArtifact)
+		return generateResponseMessage(false, "You are missing either the original artifact or the updated artifact");
+	// Check if the original artifact is actually just the transaction ID for the original artifact
+	if (originalArtifact.length == TX_LENGTH)
+		return generateResponseMessage(false, "You just submit the original artifact JSON, not the TXID. You can get the Artifact JSON by using the getArtifact function.");
+
+	var oaVerify = this.verifyArtifact(originalArtifact);
+	var uaVerify = this.verifyArtifact(updatedArtifact);
+
+	if (oaVerify || uaVerify){
+		if (oaVerify){
+			return oaVerify;
+		}
+		if (uaVerify){
+			return uaVerify;
+		}
+	}
+
+	//console.log(JSON.stringify(originalArtifact));
+	//console.log(JSON.stringify(updatedArtifact));
+
+	// http://stackoverflow.com/a/8432188/1232109
+	var result = jsonpatch.compare(originalArtifact, updatedArtifact);
+
+	console.log(result);
+	console.log(jsonpack.pack(result));
+
+	//console.log(JSON.stringify(originalArtifact, true, 4));
+	//console.log(JSON.stringify(updatedArtifact, true, 4));
+	//console.log(JSON.stringify(squashPatch(result), true, 4));
+
+	var squashed = squashPatch(result);
+	console.log(JSON.stringify(squashed));
+	console.log(jsonpack.pack(squashed));
+
+	return '{"success": true, "message": ' + JSON.stringify(squashed) + '}';
+}
+
+LibraryDJS.prototype.getArtifact = function(txid, callback){
+	var baseURL = 'https://api.alexandria.io/alexandria/v1/search';
+	var options = {
+		method: 'POST',
+		headers: {},
+		url: baseURL,
+		body: JSON.stringify({
+			'protocol': 'media',
+			'search-on': 'txid',
+			'search-for': txid
+		})
+	};
+
+	try {
+		request(options, function (error, response, body) {
+			if (!error && response.statusCode == 200) {
+				// Grab the result we want.
+				var artifacts = JSON.parse(body);
+				var artifact = artifacts.response[0];
+				var str = JSON.stringify(artifact);
+
+				if (artifacts.status == "success"){
+					// We return the message differently here as it hates returning JSON inside JSON for some reason...
+					callback('{"success": true, "message": ' + str + '}');
+				} else {
+					callback(generateResponseMessage(false, "Artifact could not be found."))
+				}
+			} else {
+				callback(generateResponseMessage(false, "Request failed with status: " + response.statusCode + ", with error: " + error));
+			}
+		});
+	} catch (e) {
+		// The request failed for some reason, catch to not crash the program.
+		callback(generateResponseMessage(false, "POST Request crashed, stack: " + e));
+	}
+}
+
+LibraryDJS.prototype.verifyArtifact = function(oipArtifact){
+	if (!oipArtifact || typeof oipArtifact === "function"){
+		return generateResponseMessage(false, 'You must submit information in the OIP-041 format');
+	}
+
+	if (typeof oipArtifact == "string"){
+		// Test to see if the artifact is valid JSON
+		try {
+			oipArtifact = JSON.parse(oipArtifact);
+		} catch (e) {
+			return generateResponseMessage(false, "Artifact is not valid JSON");
+		}
+	}
+
+	// Test that the artifact has all required fields.
+	// Test "oip-041" wrapping/version number
+	if (!oipArtifact["oip-041"]){
+		return generateResponseMessage(false, "Artifact is not contained in 'oip-041' or is using an unsupported oip schema version.");
+	}
+
+	oipArtifact = oipArtifact["oip-041"];
+	// Test required fields
+	if (!oipArtifact.artifact){
+		return generateResponseMessage(false, "You must submit artifact JSON inside oip-041!");
+	}
+	if (!oipArtifact.artifact.publisher){
+		return generateResponseMessage(false, "artifact.publisher is a required field");
+	}
+	if (!oipArtifact.artifact.timestamp){
+		return generateResponseMessage(false, "artifact.timestamp is a required field");
+	}
+
+	// Validate timestamp is a number
+	if (isNaN(oipArtifact.artifact.timestamp)){
+		return generateResponseMessage(false, "artifact.timestamp must be submitted as a number");
+	}
+
+	if (!oipArtifact.artifact.type){
+		return generateResponseMessage(false, "artifact.type is a required field");
+	}
+
+	if (!oipArtifact.artifact.info){
+		return generateResponseMessage(false, "artifact.info is a required fieldset");
+	}
+	if (!oipArtifact.artifact.info.title){
+		return generateResponseMessage(false, "artifact.info.title is a required field");
+	}
+	if (!oipArtifact.artifact.info.description){
+		return generateResponseMessage(false, "artifact.info.description is a required field");
+	}
+	if (!oipArtifact.artifact.info.year){
+		return generateResponseMessage(false, "artifact.info.year is a required field");
+	}
+
+	// Validate year is a number
+	if (isNaN(oipArtifact.artifact.info.year)){
+		return generateResponseMessage(false, "artifact.info.year must be submitted as a number");
+	}
+
+	if (!oipArtifact.artifact.storage){
+		return generateResponseMessage(false, "artifact.storage is a required fieldset");
+	}
+	if (!oipArtifact.artifact.storage.network){
+		return generateResponseMessage(false, "artifact.storage.network is a required field");
+	}
+
+	// Currently the storage location is a required field. This however can be "hidden" using LibraryD so that you can serve the IPFS file location via an API (for example, that detects payments)
+	if (!oipArtifact.artifact.storage.location){
+		return generateResponseMessage(false, "artifact.storage.location is a required field (Talk with Alexandria if you need to hide this field from being published in LibraryD)");
+	}
+
+	// Default return nothing.
+	return;
+}
+
+function squashPatch(patch){
+	var squashed = {
+		"add": [],
+		"replace": [],
+		"remove": []
+	}
+	for (var i = 0; i < patch.length; i++) {
+		// Store the operation
+		var operation = patch[i].op;
+		// Remove operation key from squashed patch
+		delete patch[i].op;
+		// Edit the path to be shorter, unless it is the signature.
+		patch[i].path = patch[i].path.replace("/oip-041/artifact", "");
+		// Check what the operation is, and move it to the right place
+		if (operation == "add")
+			squashed.add.push(patch[i]);
+		else if (operation == "replace")
+			squashed.replace.push(patch[i]);
+		else if (operation == "remove")
+			squashed.remove.push(patch[i]);
+	}
+	return squashed;
+}
+
 function generateResponseMessage(success, message) {
-	return JSON.parse('{ "success": ' + success + (success ? ', "message": "' : ', "error": "') + message + '"}');
+	try {
+		return JSON.parse('{ "success": ' + success + (success ? ', "message": "' : ', "error": "') + message + '"}');
+	} catch(e) {
+		console.log(e);
+		return '{"success": false, "error": "Error generating response message"}';
+	}
 }
 
 const CHOP_MAX_LEN = 270;
 const TXCOMMENT_MAX_LEN = 528;
 const SEND_AMOUNT = 0.0001;
+const TX_LENGTH = 64;
 
 module.exports = LibraryDJS;

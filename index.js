@@ -238,7 +238,7 @@ LibraryDJS.prototype.editArtifact = function(oipArtifact, callback){
 		console.log(toSign);
 		console.log(oipEdit);
 		// Sign the message
-		/*libraryd.signMessage(oipArtifact.artifact.publisher, toSign, function(res){
+		libraryd.signMessage(oipArtifact.artifact.publisher, toSign, function(res){
 			if (!res.success){
 				callback(res);
 				return;
@@ -250,8 +250,85 @@ LibraryDJS.prototype.editArtifact = function(oipArtifact, callback){
 			libraryd.sendToBlockChain(reformattedOIP, oipArtifact.artifact.publisher, function(response){
 				callback(response);
 			})
-		});*/
+		});
 	})
+}
+
+LibraryDJS.prototype.deactivateArtifact = function(txid, title, callback){
+	if (!callback){
+		// Check if they submitted the callback as the title
+		if (typeof title == "function"){
+			callback = title;
+			callback(generateResponseMessage('You must submit a title!'));
+			return
+		}
+		return;
+	}
+
+	// Check if we have a txid
+	if (!txid){
+		callback(generateResponseMessage(false, "You must submit a txid!"));
+		return;
+	}
+
+	// Check txid length, make sure it is 64
+	if (txid.length != 64){
+		callback(generateResponseMessage(false, "You must submit a valid txid!"));
+		return;
+	}
+
+	if (!title){
+		callback(generateResponseMessage(false, "You must submit a title!"));
+		return;
+	}
+
+	var libraryd = this;
+	libraryd.getArtifact(txid, function(response){
+		if (typeof response == "string"){
+			// Test to see if the artifact is valid JSON
+			try {
+				response = JSON.parse(response);
+			} catch (e) {
+				callback(generateResponseMessage(false, "Artifact is not valid JSON"));
+			}
+		}
+
+		// Check if response is successful
+		if (!response.success){
+			callback(response);
+			return;
+		}
+
+		var oldArtifact = response.message;
+
+		// Check if title matches.
+		if (oldArtifact["oip-041"].artifact.info.title == title){
+			var timestamp = Math.floor(Date.now() / 1000);
+			var toSign = oldArtifact['oip-041'].artifact.txid + "-" + oldArtifact['oip-041'].artifact.publisher + "-" + timestamp;
+
+			// Sign the message
+			libraryd.signMessage(oldArtifact["oip-041"].artifact.publisher, toSign, function(res){
+				if (!res.success){
+					callback(res);
+					return;
+				}
+				// Attach signature
+				var oipDeactivate = {
+					"oip-041": {
+						"deactivateArtifact": txid,
+						"timestamp": timestamp,
+						"signature": res.message
+					}
+				}
+
+				libraryd.sendToBlockChain(oipDeactivate, oldArtifact["oip-041"].artifact.publisher, function(response){
+					callback(response);
+				})
+			})
+		} else {
+			callback(generateResponseMessage(false, "The title does not match! Aborting deactivation!"));
+		}
+	});
 }
 
 LibraryDJS.prototype.signMessage = function(address, toSign, callback){

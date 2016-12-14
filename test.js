@@ -210,7 +210,7 @@ var artifactEdit = {
 
 // List your rigs
 //ldjs.getArtifact('a449b0f6a601e503e7b4fdc0ada47f55a8b2f98feb2fdb044f7a92d971ff0456', function(response){});
-ldjs.editArtifact(artifactEdit, function(res){
+ldjs.deactivateArtifact('96bad8e17f908da4c695c58b0f843a03928e338b361b3035eda16a864eafc3a2', "Happy Birthday EP", function(res){
 	console.log(res);
 });
 

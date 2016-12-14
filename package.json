@@ -1,6 +1,6 @@
 {
   "name": "librarydjs",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Node JS Module interface to publish messages to the Florincoin Blockchain.",
   "main": "index.js",
   "scripts": {

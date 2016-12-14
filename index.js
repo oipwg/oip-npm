@@ -309,16 +309,16 @@ LibraryDJS.prototype.generateEditDiff = function(originalArtifact, updatedArtifa
 	// http://stackoverflow.com/a/8432188/1232109
 	var result = jsonpatch.compare(originalArtifact, updatedArtifact);
 
-	console.log(result);
-	console.log(jsonpack.pack(result));
+	//console.log(result);
+	//console.log(jsonpack.pack(result));
 
 	//console.log(JSON.stringify(originalArtifact, true, 4));
 	//console.log(JSON.stringify(updatedArtifact, true, 4));
 	//console.log(JSON.stringify(squashPatch(result), true, 4));
 
 	var squashed = squashPatch(result);
-	console.log(JSON.stringify(squashed));
-	console.log(jsonpack.pack(squashed));
+	//console.log(JSON.stringify(squashed));
+	//console.log(jsonpack.pack(squashed));
 
 	return '{"success": true, "message": ' + JSON.stringify(squashed) + '}';
 }

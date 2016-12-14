@@ -114,28 +114,32 @@ LibraryDJS.prototype.publishArtifact = function(oipArtifact, callback){
 	}
 
 	// If the artifact verifies correctly it will contain no text, if it fails it will have an error.
-	var verify = verifyArtifact(oipArtifact);
+	var verify = this.verifyArtifact(oipArtifact);
 	// Check if there is an error
 	if (verify){
 		callback(verify);
 		return;
 	}
 
+	var timestamp = Math.floor(Date.now() / 1000);
+
 	// http://api.alexandria.io/#sign-publisher-announcement-message
 	// IPFS - Address - UNIX Timestamp
-	var toSign = oipArtifact.artifact.storage.location + "-" + oipArtifact.artifact.publisher + "-" + oipArtifact.artifact.timestamp;
+	var toSign = oipArtifact["oip-041"].artifact.storage.location + "-" + oipArtifact["oip-041"].artifact.publisher + "-" + timestamp;
+
+	oipArtifact["oip-041"].artifact.timestamp = timestamp;
 	
 	var libraryd = this;
 	// Sign the message
-	libraryd.signMessage(oipArtifact.artifact.publisher, toSign, function(res){
+	libraryd.signMessage(oipArtifact["oip-041"].artifact.publisher, toSign, function(res){
 		if (!res.success){
 			callback(res);
 			return;
 		}
 		// Attach signature
-		oipArtifact.signature = res.message;
+		oipArtifact["oip-041"].signature = res.message;
 		// Above we remove the "oip-041" for ease of use, this adds it back in.
-		libraryd.sendToBlockChain(oipArtifact, oipArtifact.artifact.publisher, function(response){
+		libraryd.sendToBlockChain(oipArtifact, oipArtifact["oip-041"].artifact.publisher, function(response){
 			callback(response);
 		})
 	});
@@ -260,7 +264,7 @@ LibraryDJS.prototype.deactivateArtifact = function(txid, title, callback){
 		if (typeof title == "function"){
 			callback = title;
 			callback(generateResponseMessage('You must submit a title!'));
-			return
+			return;
 		}
 		return;
 	}

@@ -1,5 +1,5 @@
 # LibraryDJS
-LibraryDJS is an easy to use Node.js module to help with publishing to OIP media formats. It publishes the OIP metadata to the Florincoin blockchain using predefined
+LibraryDJS is an easy to use Node.js module to help with publishing to OIP media formats. It publishes the OIP metadata to the Florincoin blockchain using predefined metadata templates.
 
 ## Installation
 Import LibraryDJS into your existing application using the following below.
@@ -82,15 +82,38 @@ After processing the `publishArtifact` function will return a response as follow
 }
 ```
 
+### Announce Publisher:
+`announcePublisher(publisherJSON, callback)`: Changes the ownership of an artifact from your publisher to another user. `transferOwnership` function example:
+```javascript
+// The artifact txid that we are transfering
+var publisherJSON = {"alexandria-publisher":{"name":"Publisher Name","address":"FLO Address","emailmd5":"","bitmessage":""}};
+
+ldjs.announcePublisher(originalTX, function(response){
+	if (res.success)
+		// Successful
+	else
+		// Not successful, usually because the lack of callback or title.
+
+	console.log(response);
+})
+```
+After processing the `announcePublisher` function will return a response as follows:
+```javascript
+{
+	"success": true, 	# This variable is set dependant on if the API call was successful or not.
+	"message": "txid"	# This variable will be filled in on success. If success is false, `error` will be used instead of `message`.
+}
+```
+
 ### Edit Media:
-`editArtifact(newOIPArtifact, oldArtifactTXID, callback)`: The Edit Artifact function accepts data in the OIP-041 Edit format (example below) along with data in the standard OIP-041 schema (same as `publishArtifact` but with an added `txid` field inside the data at `oip-041.artifact.txid`). It calculates what information is new and publish that to the Florincoin blockchain. Example Edit code:
+`editArtifact(newOIPArtifact, callback)`: The Edit Artifact function accepts data in the OIP-041 Edit format (example below) along with data in the standard OIP-041 schema (same as `publishArtifact` but with an added `txid` field inside the data at `oip-041.artifact.txid`). It calculates what information is new and publish that to the Florincoin blockchain. Example Edit code:
 ```javascript
 // The artifact txid that we are editting
-var originalTX = "XXXXXXXXXXXXX";
 // The updated artifact in OIP-041 format.
 var artifact = {
   "oip-041": {
     "artifact": {
+      "txid": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
       "publisher": "FD6qwMcfpnsKmoL2kJSfp1czBMVicmkK1Q",
       "timestamp": 1481419391,
       "type": "music",
@@ -168,7 +191,7 @@ var originalTX = "XXXXXXXXXXXXX";
 // The updated artifact in OIP-041 format.
 var newOwner = "XXXXXXXXXXXXX"; // This needs to be a florincoin address that is a registered publisher. If it is not a registered publisher it will fail.
 
-ldjs.deactivateArtifact(originalTX, title, function(response){
+ldjs.transferOwnership(originalTX, newOwner, function(response){
 	if (res.success)
 		// Successful
 	else
@@ -185,8 +208,9 @@ After processing the `transferOwnership` function will return a response as foll
 }
 ```
 
-## OIP Artifact Formats
 
+## OIP Artifact Formats
+You can find 
 
 ## License
 This module uses the MIT License. This can be found inside the file named `LICENSE`

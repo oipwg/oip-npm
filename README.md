@@ -1,5 +1,5 @@
 # LibraryDJS
-LibraryDJS is an easy to use Node.js module to help with publishing to OIP media formats. It publishes the OIP metadata to the Florincoin blockchain using predefined metadata templates.
+LibraryDJS is an easy to use Node.js module to help with publishing to OIP media formats. It publishes the OIP metadata to the Florincoin blockchain using [predefined metadata templates](https://github.com/dloa/media-protocol).
 
 ## Installation
 Import LibraryDJS into your existing application using the following below.
@@ -210,7 +210,7 @@ After processing the `transferOwnership` function will return a response as foll
 
 
 ## OIP Artifact Formats
-You can find 
+You can find more information about the OIP-041 standard here: https://github.com/dloa/media-protocol
 
 ## License
 This module uses the MIT License. This can be found inside the file named `LICENSE`

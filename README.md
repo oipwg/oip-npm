@@ -4,7 +4,7 @@ OIP-NPM is an easy to use Node.js module to help with publishing to OIP media fo
 ## Installation
 Import OIP-NPM into your existing application using the following below.
 ```
-$ npm install OIP-NPM --save
+$ npm install oip-npm --save
 ```
 
 # Usage

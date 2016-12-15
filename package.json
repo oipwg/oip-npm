@@ -1,5 +1,5 @@
 {
-  "name": "librarydjs",
+  "name": "oip-npm",
   "version": "1.6.0",
   "description": "Node JS Module interface to publish messages to the Florincoin Blockchain.",
   "main": "index.js",
@@ -8,19 +8,20 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ostlerdev/libraryd-npm.git"
+    "url": "git+https://github.com/dloa/oip-npm.git"
   },
   "keywords": [
-    "LibraryD",
+    "Open Index Protocol",
+    "OIP",
     "Alexandria",
     "Florincoin",
     "API"
   ],
   "author": "OstlerDev <sky@alexandria.io>",
   "bugs": {
-    "url": "https://github.com/ostlerdev/libraryd-npm/issues"
+    "url": "https://github.com/dloa/oip-npm/issues"
   },
-  "homepage": "https://github.com/ostlerdev/libraryd-npm#readme",
+  "homepage": "https://github.com/dloa/oip-npm#readme",
   "dependencies": {
     "crypto": "0.0.3",
     "fast-json-patch": "^1.1.2",

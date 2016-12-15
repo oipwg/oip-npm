@@ -255,7 +255,7 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 		//console.log(JSON.stringify(response.message));
 
 		// Get the edit format
-		var oipEdit = libraryd.generateEditDiff(response.message, oipArtifact, oipArtifact['oip-041'].artifact.txid);
+		var oipEdit = libraryd.generateEditDiff(response.message, oipArtifact, oldTX);
 
 		// Generate the MD5 Hash 
 		var patchHash = oipEdit;

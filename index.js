@@ -112,6 +112,15 @@ OIP.prototype.publishArtifact = function(oipArtifact, callback){
 		callback(generateResponseMessage(false, 'You must submit information in the OIP-041 format'));
 		return;
 	}
+	// Make sure we don't crash :)
+	if (typeof oipArtifact == "string"){
+		// Test to see if the artifact is valid JSON
+		try {
+			oipArtifact = JSON.parse(oipArtifact);
+		} catch (e) {
+			callback(generateResponseMessage(false, "Artifact is not valid JSON"));
+		}
+	}
 
 	// If the artifact verifies correctly it will contain no text, if it fails it will have an error.
 	var verify = this.verifyArtifact(oipArtifact);

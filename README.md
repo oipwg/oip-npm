@@ -1,19 +1,19 @@
-# LibraryDJS
-LibraryDJS is an easy to use Node.js module to help with publishing to OIP media formats. It publishes the OIP metadata to the Florincoin blockchain using [predefined metadata templates](https://github.com/dloa/media-protocol).
+# OIP-NPM
+OIP-NPM is an easy to use Node.js module to help with publishing to OIP media formats. It publishes the OIP metadata to the Florincoin blockchain using [predefined metadata templates](https://github.com/dloa/media-protocol).
 
 ## Installation
-Import LibraryDJS into your existing application using the following below.
+Import OIP-NPM into your existing application using the following below.
 ```
-$ npm install LibraryDJS --save
+$ npm install OIP-NPM --save
 ```
 
 # Usage
 ## Starting Off
 To start off, you will need to import LibaryDJS into your application, then set it up using the example below.
 ```javascript
-var LibraryDJS = require('LibraryDJS');
+var oip041 = require('oip-npm');
 
-var ldjs = new LibraryDJS({
+var oip = new oip041({
      host: 'localhost', # Information about your local Florincoin RPC
      port: 18322,
      username: 'florincoinrpc', 
@@ -25,9 +25,9 @@ var ldjs = new LibraryDJS({
 ### Publish Media:
 `publishArtifact(oipArtifact, callback)`: Validates and publishes a submitted OIP-041 artifact:
 ```javascript
-var LibraryDJS = require('LibraryDJS');
+var oip041 = require('oip-npm');
 
-var ldjs = new LibraryDJS({
+var oip = new oip041({
      host: 'localhost', # Information about your local Florincoin RPC
      port: 18322,
      username: 'florincoinrpc', 
@@ -43,7 +43,7 @@ var artifact = {
       "type": "music",
       "info": {
         "title": "Test Artifact",
-        "description": "Testing publishing from LibraryDJS",
+        "description": "Testing publishing from OIP-NPM",
         "year": "2016",
         "extraInfo": {}
       },
@@ -65,7 +65,7 @@ var artifact = {
   }
 }
 
-ldjs.publishArtifact(artifact, function(response){
+oip.publishArtifact(artifact, function(response){
 	if (res.success)
 		// Successful
 	else
@@ -86,9 +86,9 @@ After processing the `publishArtifact` function will return a response as follow
 `announcePublisher(publisherJSON, callback)`: Changes the ownership of an artifact from your publisher to another user. `transferOwnership` function example:
 ```javascript
 // The artifact txid that we are transfering
-var publisherJSON = {"alexandria-publisher":{"name":"Publisher Name","address":"FLO Address","emailmd5":"","bitmessage":""}};
+var publisherJSON = {"oip-publisher":{"name":"Publisher Name","address":"FLO Address","emailmd5":"","bitmessage":""}};
 
-ldjs.announcePublisher(originalTX, function(response){
+oip.announcePublisher(originalTX, function(response){
 	if (res.success)
 		// Successful
 	else
@@ -119,7 +119,7 @@ var artifact = {
       "type": "music",
       "info": {
         "title": "Test Artifact (edit)",
-        "description": "Testing editting from LibraryDJS",
+        "description": "Testing editting from OIP-NPM",
         "year": "2016",
         "extraInfo": {}
       },
@@ -141,7 +141,7 @@ var artifact = {
   }
 }
 
-ldjs.editArtifact(artifact, originalTX, function(response){
+oip.editArtifact(artifact, originalTX, function(response){
 	if (res.success)
 		// Successful
 	else
@@ -166,7 +166,7 @@ var originalTX = "XXXXXXXXXXXXX";
 // The updated artifact in OIP-041 format.
 var title = "Test Artifact"
 
-ldjs.deactivateArtifact(originalTX, title, function(response){
+oip.deactivateArtifact(originalTX, title, function(response){
 	if (res.success)
 		// Successful
 	else
@@ -193,7 +193,7 @@ var origOwner = "XXXXXXXXXXXXX";
 // The updated artifact in OIP-041 format.
 var newOwner = "XXXXXXXXXXXXX"; // This needs to be a florincoin address that is a registered publisher. If it is not a registered publisher it will fail.
 
-ldjs.transferOwnership(originalTX, origOrner, newOwner, function(response){
+oip.transferOwnership(originalTX, origOrner, newOwner, function(response){
 	if (res.success)
 		// Successful
 	else

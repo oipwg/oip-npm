@@ -4,7 +4,7 @@ var jsonpatch = require('fast-json-patch');
 var jsonpack = require('jsonpack/main');
 var client;
 
-function LibraryDJS(args){
+function OIP(args){
 	this.client = new florincoin.Client({
 		host: args.host,
 		port: args.port,
@@ -14,7 +14,7 @@ function LibraryDJS(args){
 }
 
 // Accepts information in the following format: {"name": "Test Publisher", "address": "FLO Address"}
-LibraryDJS.prototype.signPublisher = function(args, callback){
+OIP.prototype.signPublisher = function(args, callback){
 	// Check if the callback is being passed in as args
 	if (!args || typeof args === "function"){
 		callback = args;
@@ -40,7 +40,7 @@ LibraryDJS.prototype.signPublisher = function(args, callback){
 }
 
 // Accepts information in the following format: {"name": "Test Publisher", "address": "FLO Address"}
-LibraryDJS.prototype.signArtifact = function(args, callback){
+OIP.prototype.signArtifact = function(args, callback){
 	// Check if the callback is being passed in as args
 	if (!args || typeof args === "function"){
 		callback = args;
@@ -66,7 +66,7 @@ LibraryDJS.prototype.signArtifact = function(args, callback){
 }
 
 // Accepts information in the following format: {"alexandria-publisher":{"name":"Publisher Name","address":"FLO Address","emailmd5":"","bitmessage":""} }
-LibraryDJS.prototype.announcePublisher = function(args, callback){
+OIP.prototype.announcePublisher = function(args, callback){
 	var errorString = 'You must submit information in the following format: {"alexandria-publisher":{"name":"Publisher Name","address":"FLO Address","emailmd5":"","bitmessage":""} }';
 	// Check if the callback is being passed in as args
 	if (!args || typeof args === "function"){
@@ -105,7 +105,7 @@ LibraryDJS.prototype.announcePublisher = function(args, callback){
 }
 
 // Accepts information in the format OIP-041
-LibraryDJS.prototype.publishArtifact = function(oipArtifact, callback){
+OIP.prototype.publishArtifact = function(oipArtifact, callback){
 	// Check if the callback is being passed in as args
 	if (!oipArtifact || typeof oipArtifact === "function"){
 		callback = oipArtifact;
@@ -146,7 +146,7 @@ LibraryDJS.prototype.publishArtifact = function(oipArtifact, callback){
 }
 
 // Accepts information in the format OIP-041-Artifact and OIP-041-Edit
-LibraryDJS.prototype.editArtifact = function(oipArtifact, callback){
+OIP.prototype.editArtifact = function(oipArtifact, callback){
 	// Check if the callback is being passed in as args
 	if (!oipArtifact || typeof oipArtifact === "function"){
 		callback = oipArtifact;
@@ -258,7 +258,7 @@ LibraryDJS.prototype.editArtifact = function(oipArtifact, callback){
 	})
 }
 
-LibraryDJS.prototype.deactivateArtifact = function(txid, title, callback){
+OIP.prototype.deactivateArtifact = function(txid, title, callback){
 	if (!callback){
 		// Check if they submitted the callback as the title
 		if (typeof title == "function"){
@@ -337,7 +337,7 @@ LibraryDJS.prototype.deactivateArtifact = function(txid, title, callback){
 	});
 }
 
-LibraryDJS.prototype.transferArtifact = function(txid, origOwner, newOwner, callback){
+OIP.prototype.transferArtifact = function(txid, origOwner, newOwner, callback){
 	if (!callback){
 		// Check if they submitted the callback as the title
 		if (typeof newOwner == "function"){
@@ -400,7 +400,7 @@ LibraryDJS.prototype.transferArtifact = function(txid, origOwner, newOwner, call
 	})
 }
 
-LibraryDJS.prototype.signMessage = function(address, toSign, callback){
+OIP.prototype.signMessage = function(address, toSign, callback){
 	try {
 		this.client.signMessage(address, toSign, function(err, signature) {
 			if (err){
@@ -418,7 +418,7 @@ LibraryDJS.prototype.signMessage = function(address, toSign, callback){
 }
 
 // callback is (errorString, txIDs Array)
-LibraryDJS.prototype.multiPart = function(txComment, address, callback) {
+OIP.prototype.multiPart = function(txComment, address, callback) {
 	var txIDs = [];
 
 	var multiPartPrefix = "alexandria-media-multipart(";
@@ -462,7 +462,7 @@ LibraryDJS.prototype.multiPart = function(txComment, address, callback) {
 }
 
 var txIDs = [];
-LibraryDJS.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompleted, reference, address, amount, multiPartPrefix, callback){
+OIP.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompleted, reference, address, amount, multiPartPrefix, callback){
 	// Increment the number of completed pieces
 	var part = lastPiecesCompleted + 1;
 
@@ -504,7 +504,7 @@ LibraryDJS.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiec
 	});
 }
 
-LibraryDJS.prototype.chopString = function(input) {
+OIP.prototype.chopString = function(input) {
 	input = input.toString();
 
 	var chunks = [];
@@ -517,7 +517,7 @@ LibraryDJS.prototype.chopString = function(input) {
 	return chunks;
 };
 
-LibraryDJS.prototype.sendToBlockChain = function(txComment, address, callback){
+OIP.prototype.sendToBlockChain = function(txComment, address, callback){
 	// Make sure that it is a string and not JSON object.
 	if (typeof txComment != "string"){
 		// If JSON object then convert to string.
@@ -542,7 +542,7 @@ LibraryDJS.prototype.sendToBlockChain = function(txComment, address, callback){
 	}
 }
 
-LibraryDJS.prototype.generateEditDiff = function(originalArtifact, updatedArtifact, origTXID){
+OIP.prototype.generateEditDiff = function(originalArtifact, updatedArtifact, origTXID){
 	if (!originalArtifact || !updatedArtifact)
 		return generateResponseMessage(false, "You are missing either the original artifact or the updated artifact");
 	// Check if the original artifact is actually just the transaction ID for the original artifact
@@ -592,7 +592,7 @@ LibraryDJS.prototype.generateEditDiff = function(originalArtifact, updatedArtifa
 	return '{"success": true, "message": ' + JSON.stringify(oip041Edit) + '}';
 }
 
-LibraryDJS.prototype.getArtifact = function(txid, callback){
+OIP.prototype.getArtifact = function(txid, callback){
 	var baseURL = 'https://api.alexandria.io/alexandria/v2/search';
 	var options = {
 		method: 'POST',
@@ -635,7 +635,7 @@ LibraryDJS.prototype.getArtifact = function(txid, callback){
 	}
 }
 
-LibraryDJS.prototype.verifyArtifact = function(oipArtifact){
+OIP.prototype.verifyArtifact = function(oipArtifact){
 	if (!oipArtifact || typeof oipArtifact === "function"){
 		return generateResponseMessage(false, 'You must submit information in the OIP-041 format');
 	}
@@ -748,4 +748,4 @@ const TXCOMMENT_MAX_LEN = 528;
 const SEND_AMOUNT = 0.0001;
 const TX_LENGTH = 64;
 
-module.exports = LibraryDJS;
+module.exports = OIP;

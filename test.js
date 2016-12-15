@@ -1,14 +1,14 @@
-var LibraryDJS = require('./index.js');
+var oip041 = require('./index.js');
 var jsonpack = require('jsonpack/main');
 
-var ldjs = new LibraryDJS({
+var oip = new oip041({
      host: 'localhost',
      port: 18322,
      username: 'florincoinrpc', 
      password: 'password'
 });
 
-var oip041 = {  
+var oipd041 = {  
     "oip-041":{  
         "artifact":{  
             "publisher":"FD6qwMcfpnsKmoL2kJSfp1czBMVicmkK1Q",
@@ -215,10 +215,10 @@ var artifactEdit = {
 }
 
 
-//ldjs.editArtifact(editArtifact, function(response){console.log(response)});
-//ldjs.getArtifact('d5fa5f01038afb6537ea517fcb107eaaee2a6834997b7b7265f580beaec5a1b4', function(response){console.log(response)});
-ldjs.transferArtifact('d5fa5f01038afb6537ea517fcb107eaaee2a6834997b7b7265f580beaec5a1b4', 'FD6qwMcfpnsKmoL2kJSfp1czBMVicmkK1Q', 'FLuiVU5iDQ4a6ztcpBLwBNjBisyY2DvUTV', function(response){console.log(response)});
-//ldjs.publishArtifact(oip041, function(res){ console.log(res); });
+//oip.editArtifact(editArtifact, function(response){console.log(response)});
+//oip.getArtifact('d5fa5f01038afb6537ea517fcb107eaaee2a6834997b7b7265f580beaec5a1b4', function(response){console.log(response)});
+oip.transferArtifact('d5fa5f01038afb6537ea517fcb107eaaee2a6834997b7b7265f580beaec5a1b4', 'FD6qwMcfpnsKmoL2kJSfp1czBMVicmkK1Q', 'FLuiVU5iDQ4a6ztcpBLwBNjBisyY2DvUTV', function(response){console.log(response)});
+//oip.publishArtifact(oipd041, function(res){ console.log(res); });
 
-//var verify = ldjs.verifyArtifact(artifactEdit);
+//var verify = oip.verifyArtifact(artifactEdit);
 //console.log(verify);

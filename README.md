@@ -1,3 +1,4 @@
+[![npm version](https://badge.fury.io/js/oip-npm.svg)](https://badge.fury.io/js/oip-npm)
 # OIP-NPM
 OIP-NPM is an easy to use Node.js module to help with publishing to OIP media formats. It publishes the OIP metadata to the Florincoin blockchain using [predefined metadata templates](https://github.com/dloa/media-protocol).
 

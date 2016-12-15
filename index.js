@@ -140,9 +140,9 @@ OIP.prototype.publishArtifact = function(oipArtifact, callback){
 
 	oipArtifact["oip-041"].artifact.timestamp = timestamp;
 	
-	var libraryd = this;
+	var oip = this;
 	// Sign the message
-	libraryd.signMessage(oipArtifact["oip-041"].artifact.publisher, toSign, function(res){
+	oip.signMessage(oipArtifact["oip-041"].artifact.publisher, toSign, function(res){
 		if (!res.success){
 			callback(res);
 			return;
@@ -150,7 +150,7 @@ OIP.prototype.publishArtifact = function(oipArtifact, callback){
 		// Attach signature
 		oipArtifact["oip-041"].signature = res.message;
 		// Above we remove the "oip-041" for ease of use, this adds it back in.
-		libraryd.sendToBlockChain(oipArtifact, oipArtifact["oip-041"].artifact.publisher, function(response){
+		oip.sendToBlockChain(oipArtifact, oipArtifact["oip-041"].artifact.publisher, function(response){
 			callback(response);
 		})
 	});
@@ -180,7 +180,7 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 		var toSign = oipArtifact.artifact.storage.location + "-" + oipArtifact.artifact.publisher + "-" + oipArtifact.artifact.timestamp;
 		
 		// Sign the message
-		libraryd.signMessage(oipArtifact.artifact.publisher, toSign, function(res){
+		oip.signMessage(oipArtifact.artifact.publisher, toSign, function(res){
 			if (!res.success){
 				callback(res);
 				return;
@@ -189,7 +189,7 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 			oipArtifact.signature = res.message;
 			// Above we remove the "oip-041" for ease of use, this adds it back in.
 			var reformattedOIP = { "oip-041": oipArtifact }
-			libraryd.sendToBlockChain(reformattedOIP, oipArtifact.artifact.publisher, function(response){
+			oip.sendToBlockChain(reformattedOIP, oipArtifact.artifact.publisher, function(response){
 				callback(response);
 				return;
 			})
@@ -207,9 +207,9 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 		return generateResponseMessage(false, "artifact.txid is a required field when editting! Please submit the TXID of the artifact you wish to edit.");
 	}
 
-	var libraryd = this;
+	var oip = this;
 	// Get the original artifact
-	libraryd.getArtifact(oipArtifact['oip-041'].artifact.txid, function(response){
+	oip.getArtifact(oipArtifact['oip-041'].artifact.txid, function(response){
 		if (typeof response == "string"){
 			// Test to see if the artifact is valid JSON
 			try {
@@ -255,29 +255,39 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 		//console.log(JSON.stringify(response.message));
 
 		// Get the edit format
-		var oipEdit = libraryd.generateEditDiff(response.message, oipArtifact, oldTX);
+		var oipEdit = oip.generateEditDiff(response.message, oipArtifact, oldTX);
+
+		if (!oipEdit.success){
+			callback(oipEdit);
+			return;
+		}
+
+		oipEdit = oipEdit.message;
 
 		// Generate the MD5 Hash 
-		var patchHash = oipEdit;
+		var patchHash = JSON.stringify(oipEdit);
 		patchHash = crypto.createHash('md5').update(patchHash).digest("hex");
 
 		//console.log(patchHash);
 
+		var timestamp = Math.floor(Date.now() / 1000);
 		// http://api.alexandria.io/#sign-publisher-announcement-message
 		// Old TXID - MD5 Hash of Patch - UNIX Timestamp
-		var toSign = oldTX + "-" + patchHash + "-" + oipArtifact['oip-041'].artifact.timestamp;
+		var toSign = oldTX + "-" + patchHash + "-" + timestamp;
+
+		oipArtifact['oip-041'].artifact.timestamp = timestamp;
 		
 		//console.log(toSign);
 		//console.log(oipEdit);
 		// Sign the message
-		libraryd.signMessage(oipArtifact['oip-041'].artifact.publisher, toSign, function(res){
+		oip.signMessage(oipArtifact['oip-041'].artifact.publisher, toSign, function(res){
 			if (!res.success){
 				callback(res);
 				return;
 			}
 			// Attach signature
-			oipArtifact.signature = res.message;
-			libraryd.sendToBlockChain(oipArtifact, oipArtifact['oip-041'].artifact.publisher, function(response){
+			oipEdit.signature = res.message;
+			oip.sendToBlockChain(oipEdit, oipArtifact['oip-041'].artifact.publisher, function(response){
 				callback(response);
 			})
 		});
@@ -312,8 +322,8 @@ OIP.prototype.deactivateArtifact = function(txid, title, callback){
 		return;
 	}
 
-	var libraryd = this;
-	libraryd.getArtifact(txid, function(response){
+	var oip = this;
+	oip.getArtifact(txid, function(response){
 		if (typeof response == "string"){
 			// Test to see if the artifact is valid JSON
 			try {
@@ -337,7 +347,7 @@ OIP.prototype.deactivateArtifact = function(txid, title, callback){
 			var toSign = oldArtifact.txid + "-" + oldArtifact['oip-041'].artifact.publisher + "-" + timestamp;
 
 			// Sign the message
-			libraryd.signMessage(oldArtifact["oip-041"].artifact.publisher, toSign, function(res){
+			oip.signMessage(oldArtifact["oip-041"].artifact.publisher, toSign, function(res){
 				if (!res.success){
 					callback(res);
 					return;
@@ -353,7 +363,7 @@ OIP.prototype.deactivateArtifact = function(txid, title, callback){
 					}
 				}
 
-				libraryd.sendToBlockChain(oipDeactivate, oldArtifact["oip-041"].artifact.publisher, function(response){
+				oip.sendToBlockChain(oipDeactivate, oldArtifact["oip-041"].artifact.publisher, function(response){
 					callback(response);
 				})
 			})
@@ -396,13 +406,13 @@ OIP.prototype.transferArtifact = function(txid, origOwner, newOwner, callback){
 		return;
 	}
 
-	var libraryd = this;
+	var oip = this;
 	
 	var timestamp = Math.floor(Date.now() / 1000);
 	var toSign = txid + "-" + origOwner + "-" + newOwner + "-" + timestamp;
 
 	// Sign the message
-	libraryd.signMessage(origOwner, toSign, function(res){
+	oip.signMessage(origOwner, toSign, function(res){
 		if (!res.success){
 			callback(res);
 			return;
@@ -420,7 +430,7 @@ OIP.prototype.transferArtifact = function(txid, origOwner, newOwner, callback){
 			}
 		}
 
-		libraryd.sendToBlockChain(oipTransfer, origOwner, function(response){
+		oip.sendToBlockChain(oipTransfer, origOwner, function(response){
 			callback(response);
 		})
 	})
@@ -460,9 +470,9 @@ OIP.prototype.multiPart = function(txComment, address, callback) {
 	var data = chop[part];
 	var preImage = part.toString() + "-" + max.toString() + "-" + address + "-" + reference + "-" + data;
 
-	var libraryd = this;
+	var oip = this;
 
-	libraryd.signMessage(address, preImage, function(response){
+	oip.signMessage(address, preImage, function(response){
 		if (!response.success){
 			callback(response);
 			return;
@@ -470,7 +480,7 @@ OIP.prototype.multiPart = function(txComment, address, callback) {
 
 		var txComment = multiPartPrefix + part.toString() + "," + max.toString() + "," + address + "," + reference + "," + response.message + "):" + data;
 
-		libraryd.client.sendToAddress(address, SEND_AMOUNT, "", "", txComment, function(err, txid) {
+		oip.client.sendToAddress(address, SEND_AMOUNT, "", "", txComment, function(err, txid) {
 			if (err){
 				callback(generateResponseMessage(false, "Unable to send funds to address: " + err))
 				console.log(err);
@@ -480,7 +490,7 @@ OIP.prototype.multiPart = function(txComment, address, callback) {
 			txIDs[txIDs.length] = txid;
 			reference = txid;
 
-			libraryd.publishPart(chop, max, 0, reference, address, SEND_AMOUNT, multiPartPrefix, function(response){
+			oip.publishPart(chop, max, 0, reference, address, SEND_AMOUNT, multiPartPrefix, function(response){
 				callback(response);
 			})
 		});
@@ -499,8 +509,8 @@ OIP.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompl
 	var preImage = part.toString() + "-" + numberOfPieces.toString() + "-" + address + "-" + reference + "-" + data;
 
 	// Generate signature
-	var libraryd = this;
-	libraryd.signMessage(address, preImage, function(res){
+	var oip = this;
+	oip.signMessage(address, preImage, function(res){
 		if (!res.success){
 			callback(res)
 			console.log(res);
@@ -508,7 +518,7 @@ OIP.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompl
 		}
 		var multiPart = multiPartPrefix + part.toString() + "," + numberOfPieces.toString() + "," + address + "," + reference + "," + res.message + "):" + data;
 
-		libraryd.client.sendToAddress(address, SEND_AMOUNT, "", "", multiPart, function(err, txid) {
+		oip.client.sendToAddress(address, SEND_AMOUNT, "", "", multiPart, function(err, txid) {
 			if (err){
 				callback(generateResponseMessage(false, "Unable to send funds to address: " + err))
 				console.log(err);
@@ -521,7 +531,7 @@ OIP.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompl
 			// Check if we are done with publishing
 			if (part < numberOfPieces){
 				// Recurse back in.
-				libraryd.publishPart(chopPieces, numberOfPieces, part, reference, address, amount, multiPartPrefix, callback);
+				oip.publishPart(chopPieces, numberOfPieces, part, reference, address, amount, multiPartPrefix, callback);
 			} else {
 				// We are done! Callback time.
 				callback(generateResponseMessage(true, txIDs));
@@ -548,6 +558,19 @@ OIP.prototype.chopString = function(input) {
 OIP.prototype.sendToBlockChain = function(txComment, address, callback){
 	// Make sure that it is a string and not JSON object.
 	if (typeof txComment != "string"){
+		// We are a JSON object, test if we accidently have a status message instead of just oip
+		if (txComment.success){
+			txComment = txComment.message;
+		}
+		// If JSON object then convert to string.
+		txComment = JSON.stringify(txComment);
+	} else {
+		// It is a string, convert to JSON, strip message out, then convert back to a string
+		txComment = JSON.parse(txComment);
+
+		if (txComment.success){
+			txComment = txComment.message;
+		}
 		// If JSON object then convert to string.
 		txComment = JSON.stringify(txComment);
 	}
@@ -617,7 +640,7 @@ OIP.prototype.generateEditDiff = function(originalArtifact, updatedArtifact, ori
 	    }
 	}
 
-	return '{"success": true, "message": ' + JSON.stringify(oip041Edit) + '}';
+	return JSON.parse('{"success": true, "message": ' + JSON.stringify(oip041Edit) + '}');
 }
 
 OIP.prototype.getArtifact = function(txid, callback){

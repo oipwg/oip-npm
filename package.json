@@ -1,6 +1,6 @@
 {
   "name": "oip-npm",
-  "version": "1.6.6",
+  "version": "1.6.7",
   "description": "Node JS Module interface to publish messages to the Florincoin Blockchain.",
   "main": "index.js",
   "scripts": {

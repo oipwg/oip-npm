@@ -1,6 +1,6 @@
 {
   "name": "oip-npm",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Node JS Module interface to publish messages to the Florincoin Blockchain.",
   "main": "index.js",
   "scripts": {
@@ -25,6 +25,7 @@
   "dependencies": {
     "crypto": "0.0.3",
     "fast-json-patch": "^1.1.2",
+    "jsonpack": "^1.1.5",
     "node-litecoin": "^1.0.1",
     "request": "^2.79.0"
   }

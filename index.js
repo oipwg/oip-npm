@@ -2,6 +2,7 @@ var florincoin = require('node-litecoin');
 var request = require('request');
 var jsonpatch = require('fast-json-patch');
 var jsonpack = require('jsonpack/main');
+var crypto = require('crypto');
 var client;
 
 function OIP(args){
@@ -65,9 +66,9 @@ OIP.prototype.signArtifact = function(args, callback){
 	});
 }
 
-// Accepts information in the following format: {"alexandria-publisher":{"name":"Publisher Name","address":"FLO Address","emailmd5":"","bitmessage":""} }
+// Accepts information in the following format: {"oip-publisher":{"name":"Publisher Name","address":"FLO Address","emailmd5":"","bitmessage":""} }
 OIP.prototype.announcePublisher = function(args, callback){
-	var errorString = 'You must submit information in the following format: {"alexandria-publisher":{"name":"Publisher Name","address":"FLO Address","emailmd5":"","bitmessage":""} }';
+	var errorString = 'You must submit information in the following format: {"oip-publisher":{"name":"Publisher Name","address":"FLO Address","emailmd5":"","bitmessage":""} }';
 	// Check if the callback is being passed in as args
 	if (!args || typeof args === "function"){
 		callback = args;
@@ -76,12 +77,12 @@ OIP.prototype.announcePublisher = function(args, callback){
 	}
 
 	// Validate that information is being submitted correctly.
-	if (!args['alexandria-publisher']){
+	if (!args['oip-publisher']){
 		callback(generateResponseMessage(false, errorString))
 		return;
 	}
 
-	var publisher = args['alexandria-publisher'];
+	var publisher = args['oip-publisher'];
 
 	if (!publisher.name){
 		callback(generateResponseMessage(false, 'You must include the publisher name! ' + errorString));
@@ -169,7 +170,7 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 		try {
 			oipArtifact = JSON.parse(oipArtifact);
 		} catch (e) {
-			callback(generateResponseMessage(false, "Unable to parse JSON, please check your format and try again."));
+			callback(generateResponseMessage(false, "Unable to parse JSON, please check your format and try again." + e));
 			return;
 		}
 	}
@@ -214,7 +215,8 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 			try {
 				response = JSON.parse(response);
 			} catch (e) {
-				callback(generateResponseMessage(false, "Unable to parse JSON, please check your format and try again."));
+				console.log(response);
+				callback(generateResponseMessage(false, "Unable to parse JSON, please check your format and try again." + e));
 				return;
 			}
 		}
@@ -226,6 +228,7 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 		}
 
 		var oldArtifact = response.message;
+		//console.log(JSON.stringify(oldArtifact));
 
 		// Check if the TX is OIP-041, only supports edits for that currently
 		if (!response.message['oip-041']){
@@ -235,26 +238,39 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 
 		// Remove the txid, we don't want to publish that
 		var oldTX = oipArtifact['oip-041'].artifact.txid;
-		delete oipArtifac['oip-041'].artifact.txid;
+		delete oipArtifact['oip-041'].artifact.txid;
+		// LibraryD adds a lot of info we do not want to republish, delete all of those from the results.
+		delete response.message['oip-041'].artifact.info.ExtraInfoString;
+		delete response.message['oip-041'].edit;
+		delete response.message['oip-041'].transferArtifact;
+		delete response.message.tags;
+		delete response.message.timestamp;
+		delete response.message.title;
+		delete response.message.type;
+		delete response.message.tags;
+		delete response.message.year;
+		delete response.message.publisher;
+		delete response.message.block;
+
+		//console.log(JSON.stringify(response.message));
 
 		// Get the edit format
 		var oipEdit = libraryd.generateEditDiff(response.message, oipArtifact, oipArtifact['oip-041'].artifact.txid);
 
 		// Generate the MD5 Hash 
-		var patch = oipEdit['oip-041'].edit.patch;
-		var patchHash = patch;
-		crypto.createHash('md5').update(patchHash).digest("hex");
+		var patchHash = oipEdit;
+		patchHash = crypto.createHash('md5').update(patchHash).digest("hex");
 
-		console.log(patchHash);
+		//console.log(patchHash);
 
 		// http://api.alexandria.io/#sign-publisher-announcement-message
 		// Old TXID - MD5 Hash of Patch - UNIX Timestamp
-		var toSign = oipArtifact['oip-041'].artifact.txid + "-" + patchHash + "-" + oipArtifact['oip-041'].artifact.timestamp;
+		var toSign = oldTX + "-" + patchHash + "-" + oipArtifact['oip-041'].artifact.timestamp;
 		
-		console.log(toSign);
-		console.log(oipEdit);
+		//console.log(toSign);
+		//console.log(oipEdit);
 		// Sign the message
-		libraryd.signMessage(oipArtifact.artifact.publisher, toSign, function(res){
+		libraryd.signMessage(oipArtifact['oip-041'].artifact.publisher, toSign, function(res){
 			if (!res.success){
 				callback(res);
 				return;
@@ -263,7 +279,7 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 			oipArtifact.signature = res.message;
 			// Above we remove the "oip-041" for ease of use, this adds it back in.
 			var reformattedOIP = { "oip-041": oipArtifact }
-			libraryd.sendToBlockChain(reformattedOIP, oipArtifact.artifact.publisher, function(response){
+			libraryd.sendToBlockChain(reformattedOIP, oipArtifact['oip-041'].artifact.publisher, function(response){
 				callback(response);
 			})
 		});
@@ -275,7 +291,7 @@ OIP.prototype.deactivateArtifact = function(txid, title, callback){
 		// Check if they submitted the callback as the title
 		if (typeof title == "function"){
 			callback = title;
-			callback(generateResponseMessage('You must submit a title!'));
+			callback(generateResponseMessage(false, 'You must submit a title!'));
 			return;
 		}
 		return;
@@ -320,7 +336,7 @@ OIP.prototype.deactivateArtifact = function(txid, title, callback){
 		// Check if title matches.
 		if (oldArtifact["oip-041"].artifact.info.title == title){
 			var timestamp = Math.floor(Date.now() / 1000);
-			var toSign = oldArtifact['oip-041'].artifact.txid + "-" + oldArtifact['oip-041'].artifact.publisher + "-" + timestamp;
+			var toSign = oldArtifact.txid + "-" + oldArtifact['oip-041'].artifact.publisher + "-" + timestamp;
 
 			// Sign the message
 			libraryd.signMessage(oldArtifact["oip-041"].artifact.publisher, toSign, function(res){
@@ -332,7 +348,7 @@ OIP.prototype.deactivateArtifact = function(txid, title, callback){
 				var oipDeactivate = {
 					"oip-041": {
 						"deactivateArtifact": {
-							"txid": oldArtifact['oip-041'].artifact.txid,
+							"txid": oldArtifact.txid,
 							"timestamp": timestamp
 						},
 						"signature": res.message
@@ -475,6 +491,8 @@ OIP.prototype.multiPart = function(txComment, address, callback) {
 
 var txIDs = [];
 OIP.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompleted, reference, address, amount, multiPartPrefix, callback){
+	if (lastPiecesCompleted == 0)
+		txIDs.push(reference);
 	// Increment the number of completed pieces
 	var part = lastPiecesCompleted + 1;
 
@@ -592,14 +610,14 @@ OIP.prototype.generateEditDiff = function(originalArtifact, updatedArtifact, ori
 	//console.log(jsonpack.pack(squashed));
 
 	var oip041Edit = {
-    "oip-041":{
-        "edit":{
-            "txid": origTXID,
-            "timestamp":updatedArtifact['oip-041'].artifact.timestamp,
-            "patch": squashed
-        }
-    }
-}
+	    "oip-041":{
+	        "edit":{
+	            "txid": origTXID,
+	            "timestamp":updatedArtifact['oip-041'].artifact.timestamp,
+	            "patch": squashed
+	        }
+	    }
+	}
 
 	return '{"success": true, "message": ' + JSON.stringify(oip041Edit) + '}';
 }
@@ -621,9 +639,11 @@ OIP.prototype.getArtifact = function(txid, callback){
 		request(options, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 				// Grab the result we want.
+				//console.log(body);
 				var artifacts = JSON.parse(body);
 
-				if (!artifacts.response){
+				//console.log(artifacts.response);
+				if (!artifacts.response || artifacts.response.length == 0 || typeof artifacts.response[0] == "undefined"){
 					callback(generateResponseMessage(false, "No artifacts found from your search of TXID "));
 					return;
 				}
@@ -702,8 +722,12 @@ OIP.prototype.verifyArtifact = function(oipArtifact){
 	}
 
 	// Validate year is a number
-	if (isNaN(oipArtifact.artifact.info.year)){
-		return generateResponseMessage(false, "artifact.info.year must be submitted as a number");
+	if (typeof oipArtifact.artifact.info.year == "string"){
+		try {
+			oipArtifact.artifact.info.year = parseInt(oipArtifact.artifact.info.year);
+		} catch(e){
+			return generateResponseMessage(false, "artifact.info.year must be submitted as a number");
+		}
 	}
 
 	if (!oipArtifact.artifact.storage){
@@ -750,7 +774,9 @@ function generateResponseMessage(success, message) {
 	try {
 		return JSON.parse('{ "success": ' + success + (success ? ', "message": "' : ', "error": "') + message + '"}');
 	} catch(e) {
-		console.log(e);
+		console.log(e.message);
+		console.log(success);
+		console.log(message);
 		return '{"success": false, "error": "Error generating response message"}';
 	}
 }

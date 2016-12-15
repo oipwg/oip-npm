@@ -118,7 +118,8 @@ OIP.prototype.publishArtifact = function(oipArtifact, callback){
 		try {
 			oipArtifact = JSON.parse(oipArtifact);
 		} catch (e) {
-			callback(generateResponseMessage(false, "Artifact is not valid JSON"));
+			callback(generateResponseMessage(false, "Unable to parse JSON, please check your format and try again."));
+			return;
 		}
 	}
 
@@ -168,7 +169,8 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 		try {
 			oipArtifact = JSON.parse(oipArtifact);
 		} catch (e) {
-			callback(generateResponseMessage(false, "Artifact is not valid JSON"));
+			callback(generateResponseMessage(false, "Unable to parse JSON, please check your format and try again."));
+			return;
 		}
 	}
 	// Check if it is an edit or artifact format.
@@ -212,7 +214,8 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 			try {
 				response = JSON.parse(response);
 			} catch (e) {
-				callback(generateResponseMessage(false, "Artifact is not valid JSON"));
+				callback(generateResponseMessage(false, "Unable to parse JSON, please check your format and try again."));
+				return;
 			}
 		}
 

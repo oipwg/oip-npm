@@ -286,7 +286,7 @@ OIP.prototype.editArtifact = function(oipArtifact, callback){
 				return;
 			}
 			// Attach signature
-			oipEdit.signature = res.message;
+			oipEdit['oip-041'].signature = res.message;
 			oip.sendToBlockChain(oipEdit, oipArtifact['oip-041'].artifact.publisher, function(response){
 				callback(response);
 			})
@@ -632,7 +632,7 @@ OIP.prototype.generateEditDiff = function(originalArtifact, updatedArtifact, ori
 
 	var oip041Edit = {
 	    "oip-041":{
-	        "edit":{
+	        "editArtifact":{
 	            "txid": origTXID,
 	            "timestamp":updatedArtifact['oip-041'].artifact.timestamp,
 	            "patch": squashed

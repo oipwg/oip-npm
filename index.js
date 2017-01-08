@@ -563,7 +563,7 @@ OIP.prototype.sendToBlockChain = function(txComment, address, callback){
 			txComment = txComment.message;
 		}
 		// If JSON object then convert to string.
-		txComment = JSON.stringify(txComment);
+		txComment = UTF8SafeJsonEncode(txComment);
 	} else {
 		// It is a string, convert to JSON, strip message out, then convert back to a string
 		txComment = JSON.parse(txComment);
@@ -572,7 +572,7 @@ OIP.prototype.sendToBlockChain = function(txComment, address, callback){
 			txComment = txComment.message;
 		}
 		// If JSON object then convert to string.
-		txComment = JSON.stringify(txComment);
+		txComment = UTF8SafeJsonEncode(txComment);
 	}
 	// Check comment length.
 	if (txComment.length > (CHOP_MAX_LEN * 10)) {
@@ -806,6 +806,15 @@ function generateResponseMessage(success, message) {
 		console.log(message);
 		return '{"success": false, "error": "Error generating response message"}';
 	}
+}
+
+function UTF8SafeJsonEncode(s, emit_unicode) {
+   var json = JSON.stringify(s);
+   return emit_unicode ? json : json.replace(/[\u007f-\uffff]/g,
+	  function(c) { 
+		return '\\u'+('0000'+c.charCodeAt(0).toString(16)).slice(-4);
+	  }
+   );
 }
 
 const CHOP_MAX_LEN = 270;

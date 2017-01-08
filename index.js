@@ -793,7 +793,13 @@ function squashPatch(patch){
 
 function generateResponseMessage(success, message) {
 	try {
-		return JSON.parse('{ "success": ' + success + (success ? ', "message": "' : ', "error": "') + message + '"}');
+		var response = {success: ''+success};
+		if (success) {
+			response.message = ''+message;
+		} else {
+			response.error = ''+message;
+		}
+		return response;
 	} catch(e) {
 		console.log(e.message);
 		console.log(success);

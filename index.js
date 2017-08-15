@@ -457,15 +457,15 @@ OIP.prototype.signMessage = function(address, toSign, callback){
 OIP.prototype.multiPart = function(txComment, address, callback) {
 	var txIDs = [];
 
-	var multiPartPrefix = "alexandria-media-multipart(";
+	var multiPartPrefix = "oip-mp(";
 
 	var chop = this.chopString(txComment);
 
 	var part = 0;
 	var max = chop.length - 1;
 
-	// the first reference tx id is always 64 zeros
-	var reference = new Array(65).join("0");
+	// the first reference tx id is omitted
+	var reference = '';
 
 	var data = chop[part];
 	var preImage = part.toString() + "-" + max.toString() + "-" + address + "-" + reference + "-" + data;
@@ -575,10 +575,7 @@ OIP.prototype.sendToBlockChain = function(txComment, address, callback){
 		txComment = UTF8SafeJsonEncode(txComment);
 	}
 	// Check comment length.
-	if (txComment.length > (CHOP_MAX_LEN * 10)) {
-		callback(generateResponseMessage(false, "txComment is too large to fit within 10 multipart transactions. Try making it smaller!"));
-	}
-	else if (txComment.length > TXCOMMENT_MAX_LEN) {
+	if (txComment.length > TXCOMMENT_MAX_LEN) {
 		this.multiPart(txComment, address, callback);
 	}
 	else {

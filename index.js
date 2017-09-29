@@ -169,7 +169,7 @@ function prune(artifact) {
 		var entries = Object.entries(obj);
 
 		for ([key, value] of entries) {
-			if (value === '0') delete obj[key];
+			if (value === '0' || value === 0) delete obj[key];
 			if (typeOf(value) === 'object') pruneObject(value) ;
 		}
 	}
@@ -502,7 +502,7 @@ OIP.prototype.multiPart = function(txComment, address, callback) {
 			return;
 		}
 
-		var txComment = multiPartPrefix + part.toString() + "," + max.toString() + "," + address + "," + shortRef + "," + response.message + "):" + data;
+		var txComment = makeTxComment(multiPartPrefix, [part, max, address, shortRef, response.message], data);
 
 		oip.client.sendToAddress(address, SEND_AMOUNT, "", "", txComment, function(err, txid) {
 			if (err){
@@ -542,7 +542,8 @@ OIP.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompl
 			console.log(res);
 			return;
 		}
-		var multiPart = multiPartPrefix + part.toString() + "," + numberOfPieces.toString() + "," + address + "," + shortRef + "," + res.message + "):" + data;
+		
+		var multiPart = makeTxComment(multiPartPrefix, [part, numberOfPieces, address, shortRef, res.message], data);
 
 		oip.client.sendToAddress(address, SEND_AMOUNT, "", "", multiPart, function(err, txid) {
 			if (err){
@@ -566,6 +567,13 @@ OIP.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompl
 			}
 		});
 	});
+}
+
+function makeTxComment(prefix, parts, data) {
+	var parts = parts.map(x => parseInt(x) === 0 ? '' : x.toString());
+	var txComment = prefix + parts.join(',') + '):' + data;
+
+	return txComment;
 }
 
 function shortenReference(ref) {

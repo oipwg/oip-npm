@@ -10,7 +10,7 @@ function OIP(args){
 		host: args.host,
 		port: args.port,
 		user: args.username || args.user, 
-		pass: args.password || args.
+		pass: args.password || args.pass
 	});
 }
 

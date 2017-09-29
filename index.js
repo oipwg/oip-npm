@@ -169,8 +169,15 @@ function prune(artifact) {
 		var entries = Object.entries(obj);
 
 		for ([key, value] of entries) {
-			if (value === '0' || value === 0) delete obj[key];
-			if (typeOf(value) === 'object') pruneObject(value) ;
+			if ('0' === value || 0 === value) delete obj[key];
+			if ('object' === typeOf(value)) pruneObject(value);
+			if ('array' === typeOf(value)) pruneArray(value);
+		}
+	}
+
+	function pruneArray(array) {
+		for (var item of array) {
+			if ('object' === typeOf(item)) pruneObject(item);
 		}
 	}
 
@@ -570,7 +577,7 @@ OIP.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompl
 }
 
 function makeTxComment(prefix, parts, data) {
-	var parts = parts.map(x => parseInt(x) === 0 ? '' : x.toString());
+	var parts = parts.map((part, index) => index > 0 && parseInt(part) === 0 ? '' : part.toString());
 	var txComment = prefix + parts.join(',') + '):' + data;
 
 	return txComment;

@@ -9,8 +9,8 @@ function OIP(args){
 	this.client = new florincoin.Client({
 		host: args.host,
 		port: args.port,
-		user: args.username, 
-		pass: args.password
+		user: args.username || args.user, 
+		pass: args.password || args.pass
 	});
 }
 
@@ -132,28 +132,51 @@ OIP.prototype.publishArtifact = function(oipArtifact, callback){
 		return;
 	}
 
+	var prunedArtifact = prune(oipArtifact);
+
 	var timestamp = Math.floor(Date.now() / 1000);
 
 	// http://api.alexandria.io/#sign-publisher-announcement-message
 	// IPFS - Address - UNIX Timestamp
-	var toSign = oipArtifact["oip-041"].artifact.storage.location + "-" + oipArtifact["oip-041"].artifact.publisher + "-" + timestamp;
+	var toSign = prunedArtifact["oip-041"].artifact.storage.location + "-" + prunedArtifact["oip-041"].artifact.publisher + "-" + timestamp;
 
-	oipArtifact["oip-041"].artifact.timestamp = timestamp;
+	prunedArtifact["oip-041"].artifact.timestamp = timestamp;
 	
 	var oip = this;
 	// Sign the message
-	oip.signMessage(oipArtifact["oip-041"].artifact.publisher, toSign, function(res){
+	oip.signMessage(prunedArtifact["oip-041"].artifact.publisher, toSign, function(res){
 		if (!res.success){
 			callback(res);
 			return;
 		}
 		// Attach signature
-		oipArtifact["oip-041"].signature = res.message;
+		prunedArtifact["oip-041"].signature = res.message;
 		// Above we remove the "oip-041" for ease of use, this adds it back in.
-		oip.sendToBlockChain(oipArtifact, oipArtifact["oip-041"].artifact.publisher, function(response){
+		oip.sendToBlockChain(prunedArtifact, prunedArtifact["oip-041"].artifact.publisher, function(response){
 			callback(response);
 		})
 	});
+}
+
+function prune(artifact) {
+	var clone = JSON.parse(JSON.stringify(artifact));
+
+	pruneObject(clone);
+
+	return clone;
+
+	function pruneObject(obj) {
+		var entries = Object.entries(obj);
+
+		for ([key, value] of entries) {
+			if (value === '0') delete obj[key];
+			if (typeOf(value) === 'object') pruneObject(value) ;
+		}
+	}
+
+	function typeOf(obj) {
+	  return {}.toString.call(obj).split(' ')[1].slice(0, -1).toLowerCase();
+	}
 }
 
 // Accepts information in the format OIP-041-Artifact and OIP-041-Edit
@@ -457,7 +480,7 @@ OIP.prototype.signMessage = function(address, toSign, callback){
 OIP.prototype.multiPart = function(txComment, address, callback) {
 	var txIDs = [];
 
-	var multiPartPrefix = "alexandria-media-multipart(";
+	var multiPartPrefix = "oip-mp(";
 
 	var chop = this.chopString(txComment);
 
@@ -466,9 +489,10 @@ OIP.prototype.multiPart = function(txComment, address, callback) {
 
 	// the first reference tx id is always 64 zeros
 	var reference = new Array(65).join("0");
+	var shortRef = shortenReference(reference);
 
 	var data = chop[part];
-	var preImage = part.toString() + "-" + max.toString() + "-" + address + "-" + reference + "-" + data;
+	var preImage = part.toString() + "-" + max.toString() + "-" + address + "-" + shortRef + "-" + data;
 
 	var oip = this;
 
@@ -478,7 +502,7 @@ OIP.prototype.multiPart = function(txComment, address, callback) {
 			return;
 		}
 
-		var txComment = multiPartPrefix + part.toString() + "," + max.toString() + "," + address + "," + reference + "," + response.message + "):" + data;
+		var txComment = multiPartPrefix + part.toString() + "," + max.toString() + "," + address + "," + shortRef + "," + response.message + "):" + data;
 
 		oip.client.sendToAddress(address, SEND_AMOUNT, "", "", txComment, function(err, txid) {
 			if (err){
@@ -501,12 +525,14 @@ var txIDs = [];
 OIP.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompleted, reference, address, amount, multiPartPrefix, callback){
 	if (lastPiecesCompleted == 0)
 		txIDs.push(reference);
+
+	var shortRef = shortenReference(reference);
 	// Increment the number of completed pieces
 	var part = lastPiecesCompleted + 1;
 
 	// Chop the next section of data to sign
 	var data = chopPieces[part];
-	var preImage = part.toString() + "-" + numberOfPieces.toString() + "-" + address + "-" + reference + "-" + data;
+	var preImage = part.toString() + "-" + numberOfPieces.toString() + "-" + address + "-" + shortRef + "-" + data;
 
 	// Generate signature
 	var oip = this;
@@ -516,7 +542,7 @@ OIP.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompl
 			console.log(res);
 			return;
 		}
-		var multiPart = multiPartPrefix + part.toString() + "," + numberOfPieces.toString() + "," + address + "," + reference + "," + res.message + "):" + data;
+		var multiPart = multiPartPrefix + part.toString() + "," + numberOfPieces.toString() + "," + address + "," + shortRef + "," + res.message + "):" + data;
 
 		oip.client.sendToAddress(address, SEND_AMOUNT, "", "", multiPart, function(err, txid) {
 			if (err){
@@ -540,6 +566,10 @@ OIP.prototype.publishPart = function(chopPieces, numberOfPieces, lastPiecesCompl
 			}
 		});
 	});
+}
+
+function shortenReference(ref) {
+	return ref.substring(0, 10);
 }
 
 OIP.prototype.chopString = function(input) {

@@ -169,7 +169,7 @@ function prune(artifact) {
 		var entries = Object.entries(obj);
 
 		for ([key, value] of entries) {
-			if (value === '0') delete obj[key];
+			if (value === '0' || value === 0) delete obj[key];
 			if (typeOf(value) === 'object') pruneObject(value) ;
 		}
 	}

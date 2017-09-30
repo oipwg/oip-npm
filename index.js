@@ -499,7 +499,7 @@ OIP.prototype.multiPart = function(txComment, address, callback) {
 	var shortRef = shortenReference(reference);
 
 	var data = chop[part];
-	var preImage = part.toString() + "-" + max.toString() + "-" + address + "-" + shortRef + "-" + data;
+	var preImage = part.toString() + "-" + max.toString() + "-" + address + "-" + "-" + data;
 
 	var oip = this;
 
